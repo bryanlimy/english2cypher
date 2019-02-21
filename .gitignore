@@ -1,6 +1,8 @@
-output
-
+output/
+.idea/
 .DS_Store
+*.pkl
+*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

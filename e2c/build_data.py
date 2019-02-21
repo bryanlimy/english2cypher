@@ -1,4 +1,5 @@
 import yaml
+import pickle
 import sys
 import tensorflow as tf
 import random
@@ -54,18 +55,32 @@ def build_vocab(args):
 
 
 def extract_all_translation_pairs(args):
-  with tf.gfile.GFile(args["gqa_path"], 'r') as in_file:
-    d = yaml.safe_load_all(in_file)
+  # with tf.gfile.GFile(args["gqa_path"], 'r') as in_file:
+  #   d = yaml.safe_load_all(in_file)
 
-    suffixes = ["src", "tgt"]
-    prefixes = args["modes"]
+  #   suffixes = ["src", "tgt"]
+  #   prefixes = args["modes"]
 
-    with tf.gfile.GFile(args["all_src_path"], "w") as src_file:
-      with tf.gfile.GFile(args["all_tgt_path"], "w") as tgt_file:
-        for i in tqdm(d):
-          if i["question"] and i["question"]["cypher"] is not None:
-            src_file.write(pretokenize_english(i["question"]["english"]) + "\n")
-            tgt_file.write(pretokenize_cypher(i["question"]["cypher"]) + "\n")
+  #   with tf.gfile.GFile(args["all_src_path"], "w") as src_file:
+  #     with tf.gfile.GFile(args["all_tgt_path"], "w") as tgt_file:
+  #       for i in tqdm(d):
+  #         if i["question"] and i["question"]["cypher"] is not None:
+  #           src_file.write(pretokenize_english(i["question"]["english"]) + "\n")
+  #           tgt_file.write(pretokenize_cypher(i["question"]["cypher"]) + "\n")
+
+  with tf.gfile.GFile('app_use_q_a.pkl', 'rb') as file:
+    data = pickle.load(file)
+    questions = data['Q']
+    cyphers = data['C']
+
+  suffixes = ["src", "tgt"]
+  prefixes = args["modes"]
+
+  with tf.gfile.GFile(args["all_src_path"], "w") as src_file:
+    with tf.gfile.GFile(args["all_tgt_path"], "w") as tgt_file:
+      for question, cypher in zip(questions, cyphers):
+        src_file.write(pretokenize_english(question) + "\n")
+        tgt_file.write(pretokenize_english(cypher) + "\n")
 
 
 def expand_unknowns_and_partition(args):
@@ -143,8 +158,8 @@ if __name__ == "__main__":
 
   args = get_args(extras)
 
-  if not args["skip_extract"]:
-    download_gqa(args)
+  # if not args["skip_extract"]:
+  #   download_gqa(args)
 
   print("Building...")
   etl(args)

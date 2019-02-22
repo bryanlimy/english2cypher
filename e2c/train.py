@@ -32,76 +32,89 @@ def train(args):
 
   tf.logging.set_verbosity(tf.logging.DEBUG)
 
+  config = tf.estiamtor.RunConfig(
+      save_summary_steps=2000, keep_checkpoint_max=3)
+
   estimator = tf.estimator.Estimator(
       model_fn,
       model_dir=args["model_dir"],
-      warm_start_from=args["warm_start_dir"],
-      params=args)
+      config=config,
+      params=args,
+      warm_start_from=args["warm_start_dir"])
 
-  eval_spec = tf.estimator.EvalSpec(input_fn=lambda: gen_input_fn(args, "eval"))
+  try:
+    global_step = estimator.get_variable_value('global_step')
+  except ValueError as e:
+    global_step = 0
 
-  steps_per_cycle = int(args["max_steps"] / args["predict_freq"])
+  while global_step < args['max_steps']:
+    estimator.train(input_fn=lambda: gen_input_fn(args, "train"), steps=2000)
+    estimator.evaluate(input_fn=lambda: gen_input_fn(args, "eval"), steps=100)
 
-  def do_train(max_steps):
-    # max_steps is a bit awkward, but hey, this is tensorflow
-    train_spec = tf.estimator.TrainSpec(
-        input_fn=lambda: gen_input_fn(args, "train"), max_steps=max_steps)
+  # eval_spec = tf.estimator.EvalSpec(input_fn=lambda: gen_input_fn(args, "eval"))
 
-    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+  # steps_per_cycle = int(args["max_steps"] / args["predict_freq"])
 
-  def do_predict(max_steps):
-    print("-----------------------")
-    print("Predictions")
+  # def do_train(max_steps):
+  #   # max_steps is a bit awkward, but hey, this is tensorflow
+  #   train_spec = tf.estimator.TrainSpec(
+  #       input_fn=lambda: gen_input_fn(args, "train"), max_steps=max_steps)
 
-    stats = Counter()
+  #   tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
-    def get_formatted_predictions():
-      predictions = estimator.predict(
-          input_fn=lambda: gen_input_fn(args, "predict"))
+  # def do_predict(max_steps):
+  #   print("-----------------------")
+  #   print("Predictions")
 
-      for prediction in predictions:
-        o = {}
-        for k, v in prediction.items():
-          if k == "input":
-            o[k] = prediction_to_english(v)
-          elif k in ["guided", "target"]:
-            o[k] = [prediction_to_cypher(v)]
-          elif k == "beam":
-            o[k] = [prediction_to_cypher(i) for i in v]
+  #   stats = Counter()
 
-        for i in o["beam"]:
-          if i == o["target"]:
-            stats["correct"] += 1
-          else:
-            stats["incorrect"] += 1
+  #   def get_formatted_predictions():
+  #     predictions = estimator.predict(
+  #         input_fn=lambda: gen_input_fn(args, "predict"))
 
-        logger.debug(o)
-        yield o
+  #     for prediction in predictions:
+  #       o = {}
+  #       for k, v in prediction.items():
+  #         if k == "input":
+  #           o[k] = prediction_to_english(v)
+  #         elif k in ["guided", "target"]:
+  #           o[k] = [prediction_to_cypher(v)]
+  #         elif k == "beam":
+  #           o[k] = [prediction_to_cypher(i) for i in v]
 
-      print(stats)
+  #       for i in o["beam"]:
+  #         if i == o["target"]:
+  #           stats["correct"] += 1
+  #         else:
+  #           stats["incorrect"] += 1
 
-    # with tf.gfile.GFile(os.path.join(args["output_dir"], f"predictions-{max_steps}.yaml"), 'w') as file:
-    # 	yaml.dump_all(
-    # 		get_formatted_predictions(),
-    # 		file,
-    # 		default_flow_style=False,
-    # 		width=999)
+  #       logger.debug(o)
+  #       yield o
 
-  for i in range(args["predict_freq"]):
-    max_steps = steps_per_cycle * (i + 1)
+  #     print(stats)
 
-    if not args["skip_training"]:
-      do_train(max_steps)
+  #   with tf.gfile.GFile(os.path.join(args["output_dir"], f"predictions-{max_steps}.yaml"), 'w') as file:
+  #     yaml.dump_all(
+  #       get_formatted_predictions(),
+  #       file,
+  #       default_flow_style=False,
+  #       width=999)
 
-    try:
-      do_predict(max_steps)
+  # for i in range(args["predict_freq"]):
+  #   max_steps = steps_per_cycle * (i + 1)
 
-      if args["skip_training"]:
-        break
+  #   if not args["skip_training"]:
+  #     do_train(max_steps)
 
-    except Exception:
-      traceback.print_exc()
-      pass
+  #   try:
+  #     do_predict(max_steps)
+
+  #     if args["skip_training"]:
+  #       break
+
+  #   except Exception:
+  #     traceback.print_exc()
+  #     pass
 
 
 if __name__ == "__main__":

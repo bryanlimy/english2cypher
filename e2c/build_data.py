@@ -55,19 +55,6 @@ def build_vocab(args):
 
 
 def extract_all_translation_pairs(args):
-  # with tf.gfile.GFile(args["gqa_path"], 'r') as in_file:
-  #   d = yaml.safe_load_all(in_file)
-
-  #   suffixes = ["src", "tgt"]
-  #   prefixes = args["modes"]
-
-  #   with tf.gfile.GFile(args["all_src_path"], "w") as src_file:
-  #     with tf.gfile.GFile(args["all_tgt_path"], "w") as tgt_file:
-  #       for i in tqdm(d):
-  #         if i["question"] and i["question"]["cypher"] is not None:
-  #           src_file.write(pretokenize_english(i["question"]["english"]) + "\n")
-  #           tgt_file.write(pretokenize_cypher(i["question"]["cypher"]) + "\n")
-
   with tf.gfile.GFile('app_use_q_a.pkl', 'rb') as file:
     data = pickle.load(file)
     questions = data['Q']

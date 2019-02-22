@@ -258,6 +258,8 @@ def model_fn(features, labels, mode, params):
         decay_steps, decay_factor, staircase=True),
       name="learning_rate_decay_cond")
 
+    tf.summary.scalar('learning_rate', fancy_lr)
+
     optimizer = tf.train.AdamOptimizer(fancy_lr)
 
     var_list = tf.trainable_variables()

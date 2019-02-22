@@ -30,15 +30,11 @@ def train(args):
       config=config,
       warm_start_from=args["warm_start_dir"])
 
+  train_spec = tf.estimator.TrainSpec(
+      input_fn=lambda: gen_input_fn(args, "train"))
   eval_spec = tf.estimator.EvalSpec(input_fn=lambda: gen_input_fn(args, "eval"))
 
-  steps_per_cycle = int(args["max_steps"] / args["predict_freq"])
-
-  for i in range(args["predict_freq"]):
-    max_steps = steps_per_cycle * (i + 1)
-    train_spec = tf.estimator.TrainSpec(
-        input_fn=lambda: gen_input_fn(args, "train"), max_steps=max_steps)
-
+  for i in range(args['epochs']):
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 

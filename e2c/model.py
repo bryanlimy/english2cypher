@@ -258,14 +258,14 @@ def model_fn(features, labels, mode, params):
         decay_steps, decay_factor, staircase=True),
       name="learning_rate_decay_cond")
 
-    var = tf.trainable_variables()
-    gradients = tf.gradients(loss, var)
+    optimizer = tf.train.AdamOptimizer(fancy_lr)
+
+    var_list = tf.trainable_variables()
+    gradients = tf.gradients(loss, var_list)
     clipped_gradients, _ = tf.clip_by_global_norm(gradients,
                                                   args["max_gradient_norm"])
-
-    optimizer = tf.train.AdamOptimizer(fancy_lr)
     train_op = optimizer.apply_gradients(
-        zip(clipped_gradients, var), global_step=global_step)
+        zip(clipped_gradients, var_list), global_step=global_step)
 
   else:
     train_op = None

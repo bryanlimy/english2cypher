@@ -1,4 +1,5 @@
 output/
+runs/
 .idea/
 .DS_Store
 *.pkl

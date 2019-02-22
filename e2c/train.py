@@ -16,24 +16,12 @@ from .util import *
 from .build_data import *
 
 
-def dump_predictions(args, predictions):
-  with tf.gfile.GFile(os.path.join(args["output_dir"], "predictions.txt"),
-                      "w") as file:
-    for prediction in predictions:
-      s = ' '.join(prediction)
-      end = s.find(EOS)
-      if end != -1:
-        s = s[0:end]
-
-      file.write(s + "\n")
-
-
 def train(args):
 
   tf.logging.set_verbosity(tf.logging.DEBUG)
 
   config = tf.estimator.RunConfig(
-      save_summary_steps=2 * args['eval_every'], keep_checkpoint_max=3)
+      save_summary_steps=None, keep_checkpoint_max=3)
 
   estimator = tf.estimator.Estimator(
       model_fn,
@@ -42,19 +30,12 @@ def train(args):
       config=config,
       warm_start_from=args["warm_start_dir"])
 
-  eval_spec = tf.estimator.EvalSpec(input_fn=lambda: gen_input_fn(args, "eval"))
-  train_spec = tf.estimator.TrainSpec(
-      input_fn=lambda: gen_input_fn(args, "train"),
-      max_steps=args['eval_every'])
+  eval_input_fn = lambda: gen_input_fn(args, "eval")
+  train_input_fn = lambda: gen_input_fn(args, "train")
 
-  try:
-    global_step = estimator.get_variable_value('global_step')
-  except ValueError as e:
-    global_step = 0
-
-  while global_step < args['max_steps']:
-    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
-    global_step = estimator.get_variable_value('global_step')
+  for i in range(args['epochs']):
+    estimator.train(train_input_fn)
+    estimator.evaluate(eval_input_fn)
 
 
 if __name__ == "__main__":

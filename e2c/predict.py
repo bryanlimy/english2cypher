@@ -24,14 +24,6 @@ from db import *
 
 def translate(args, question):
 
-  checkpoint = tf.train.last_checkpoint(args['model_dir'])
-
-  if checkpoint:
-    print('restoring checkpoint %s' % checkpoint)
-  else:
-    print('no checkpoint found at %s' % args['model_dir'])
-    exit()
-
   estimator = tf.estimator.Estimator(
       model_fn, model_dir=args["model_dir"], params=args)
 

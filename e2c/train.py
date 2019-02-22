@@ -32,11 +32,8 @@ def train(args):
 
   tf.logging.set_verbosity(tf.logging.DEBUG)
 
-  max_steps = 20000
-  train_steps = 2000
-
   config = tf.estimator.RunConfig(
-      save_summary_steps=2 * args['predict_freq'], keep_checkpoint_max=3)
+      save_summary_steps=2 * args['eval_every'], keep_checkpoint_max=3)
 
   estimator = tf.estimator.Estimator(
       model_fn,
@@ -47,14 +44,15 @@ def train(args):
 
   eval_spec = tf.estimator.EvalSpec(input_fn=lambda: gen_input_fn(args, "eval"))
   train_spec = tf.estimator.TrainSpec(
-      input_fn=lambda: gen_input_fn(args, "train"), max_steps=train_steps)
+      input_fn=lambda: gen_input_fn(args, "train"),
+      max_steps=args['eval_every'])
 
   try:
     global_step = estimator.get_variable_value('global_step')
   except ValueError as e:
     global_step = 0
 
-  while global_step < max_steps:
+  while global_step < args['max_steps']:
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
     global_step = estimator.get_variable_value('global_step')
 

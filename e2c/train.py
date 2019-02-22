@@ -38,19 +38,19 @@ def train(args):
       params=args,
       warm_start_from=args["warm_start_dir"])
 
-  max_steps = args['max_steps'] // args['predict_freq']
-
   eval_spec = tf.estimator.EvalSpec(input_fn=lambda: gen_input_fn(args, "eval"))
   train_spec = tf.estimator.TrainSpec(
-      input_fn=lambda: gen_input_fn(args, "train"), max_steps=max_steps)
+      input_fn=lambda: gen_input_fn(args, "train"),
+      max_steps=args['predict_freq'])
 
-  global_step = tf.train.get_global_step()
-  if global_step is None:
+  try:
+    global_step = estimator.get_variable_value('global_step')
+  except ValueError as e:
     global_step = 0
 
   while global_step < args['max_steps']:
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
-    global_step = tf.train.get_global_step()
+    global_step = estimator.get_variable_value('global_step')
 
 
 if __name__ == "__main__":

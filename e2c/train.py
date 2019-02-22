@@ -44,8 +44,13 @@ def train(args):
   train_spec = tf.estimator.TrainSpec(
       input_fn=lambda: gen_input_fn(args, "train"), max_steps=max_steps)
 
-  while tf.train.get_global_step() < args['max_steps']:
+  global_step = tf.train.get_global_step()
+  if global_step is None:
+    global_step = 0
+
+  while global_step < args['max_steps']:
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+    global_step = tf.train.get_global_step()
 
 
 if __name__ == "__main__":

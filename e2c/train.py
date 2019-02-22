@@ -32,10 +32,14 @@ def train(args):
 
   tf.logging.set_verbosity(tf.logging.DEBUG)
 
+  config = tf.estimator.RunConfig(
+      save_summary_steps=2 * args['predict_freq'], keep_checkpoint_max=3)
+
   estimator = tf.estimator.Estimator(
       model_fn,
       model_dir=args["model_dir"],
       params=args,
+      config=config,
       warm_start_from=args["warm_start_dir"])
 
   eval_spec = tf.estimator.EvalSpec(input_fn=lambda: gen_input_fn(args, "eval"))

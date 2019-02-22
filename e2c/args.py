@@ -26,7 +26,7 @@ def get_args(extend=lambda a: None):
   parser.add_argument('--max-len-cypher', type=int, default=180)
 
   parser.add_argument('--max-steps', type=int, default=300)
-  parser.add_argument('--predict-freq', type=int, default=3)
+  parser.add_argument('--predict-freq', type=int, default=10)
 
   parser.add_argument(
       '--limit',

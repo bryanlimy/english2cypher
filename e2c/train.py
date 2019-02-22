@@ -32,89 +32,20 @@ def train(args):
 
   tf.logging.set_verbosity(tf.logging.DEBUG)
 
-  config = tf.estiamtor.RunConfig(
-      save_summary_steps=2000, keep_checkpoint_max=3)
-
   estimator = tf.estimator.Estimator(
       model_fn,
       model_dir=args["model_dir"],
-      config=config,
       params=args,
       warm_start_from=args["warm_start_dir"])
 
-  try:
-    global_step = estimator.get_variable_value('global_step')
-  except ValueError as e:
-    global_step = 0
+  max_steps = args['max_steps'] // args['predict_freq']
 
-  while global_step < args['max_steps']:
-    estimator.train(input_fn=lambda: gen_input_fn(args, "train"), steps=2000)
-    estimator.evaluate(input_fn=lambda: gen_input_fn(args, "eval"), steps=100)
+  eval_spec = tf.estimator.EvalSpec(input_fn=lambda: gen_input_fn(args, "eval"))
+  train_spec = tf.estimator.TrainSpec(
+      input_fn=lambda: gen_input_fn(args, "train"), max_steps=max_steps)
 
-  # eval_spec = tf.estimator.EvalSpec(input_fn=lambda: gen_input_fn(args, "eval"))
-
-  # steps_per_cycle = int(args["max_steps"] / args["predict_freq"])
-
-  # def do_train(max_steps):
-  #   # max_steps is a bit awkward, but hey, this is tensorflow
-  #   train_spec = tf.estimator.TrainSpec(
-  #       input_fn=lambda: gen_input_fn(args, "train"), max_steps=max_steps)
-
-  #   tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
-
-  # def do_predict(max_steps):
-  #   print("-----------------------")
-  #   print("Predictions")
-
-  #   stats = Counter()
-
-  #   def get_formatted_predictions():
-  #     predictions = estimator.predict(
-  #         input_fn=lambda: gen_input_fn(args, "predict"))
-
-  #     for prediction in predictions:
-  #       o = {}
-  #       for k, v in prediction.items():
-  #         if k == "input":
-  #           o[k] = prediction_to_english(v)
-  #         elif k in ["guided", "target"]:
-  #           o[k] = [prediction_to_cypher(v)]
-  #         elif k == "beam":
-  #           o[k] = [prediction_to_cypher(i) for i in v]
-
-  #       for i in o["beam"]:
-  #         if i == o["target"]:
-  #           stats["correct"] += 1
-  #         else:
-  #           stats["incorrect"] += 1
-
-  #       logger.debug(o)
-  #       yield o
-
-  #     print(stats)
-
-  #   with tf.gfile.GFile(os.path.join(args["output_dir"], f"predictions-{max_steps}.yaml"), 'w') as file:
-  #     yaml.dump_all(
-  #       get_formatted_predictions(),
-  #       file,
-  #       default_flow_style=False,
-  #       width=999)
-
-  # for i in range(args["predict_freq"]):
-  #   max_steps = steps_per_cycle * (i + 1)
-
-  #   if not args["skip_training"]:
-  #     do_train(max_steps)
-
-  #   try:
-  #     do_predict(max_steps)
-
-  #     if args["skip_training"]:
-  #       break
-
-  #   except Exception:
-  #     traceback.print_exc()
-  #     pass
+  while tf.train.get_global_step() < args['max_steps']:
+    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
 if __name__ == "__main__":

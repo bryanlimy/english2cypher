@@ -20,21 +20,27 @@ def train(args):
 
   tf.logging.set_verbosity(tf.logging.DEBUG)
 
-  config = tf.estimator.RunConfig(
-      save_summary_steps=None, keep_checkpoint_max=3)
+  session_config = tf.ConfigProto(allow_soft_placement=True)
+  session_config.gpu_options.allow_growth = True
+  config = tf.estiamtor.RunConfig(session_config=session_config)
 
   estimator = tf.estimator.Estimator(
       model_fn,
       model_dir=args["model_dir"],
-      params=args,
       config=config,
-      warm_start_from=args["warm_start_dir"])
+      params=args,
+      warm_start_from=args["warm_start_dir"],
+  )
 
-  train_spec = tf.estimator.TrainSpec(
-      input_fn=lambda: gen_input_fn(args, "train"))
   eval_spec = tf.estimator.EvalSpec(input_fn=lambda: gen_input_fn(args, "eval"))
 
-  for i in range(args['epochs']):
+  steps_per_cycle = args["max_steps"] // args["predict_freq"]
+
+  for i in range(args["predict_freq"]):
+    max_steps = steps_per_cycle * (i + 1)
+    train_spec = tf.estimator.TrainSpec(
+        input_fn=lambda: gen_input_fn(args, "train"), max_steps=max_steps)
+
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 

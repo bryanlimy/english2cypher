@@ -55,7 +55,7 @@ def build_vocab(args):
 
 
 def extract_all_translation_pairs(args):
-  with tf.gfile.GFile('app_use_q_a.pkl', 'rb') as file:
+  with tf.gfile.GFile(args['pickle'], 'rb') as file:
     data = pickle.load(file)
     questions = data['Q']
     cyphers = data['C']
@@ -140,10 +140,15 @@ def etl(args):
 if __name__ == "__main__":
 
   def extras(parser):
+    parser.add_argument('--pickle', type=str, default="")
     parser.add_argument('--skip-extract', action='store_true')
     parser.add_argument('--gqa_path', type=str, default="./data/gqa.yaml")
 
   args = get_args(extras)
+
+  if not args['pickle']:
+    print('please specify --pickle file')
+    exit()
 
   # if not args["skip_extract"]:
   #   download_gqa(args)
